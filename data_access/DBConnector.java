@@ -1,4 +1,4 @@
-package src.data_access;
+package data_access;
 
 import java.sql.CallableStatement;
 import java.sql.Connection;
@@ -22,7 +22,7 @@ public class DBConnector {
     private Connection conn;
     // connParams is the name of the file containing information required to make 
     // the connection
-    private static final boolean VERBOSE = false;
+    private static final boolean VERBOSE = true;
     private static final String connParams = "connParams.txt";
 
     public DBConnector() {
@@ -69,20 +69,28 @@ public class DBConnector {
     
     public ResultSet runCall(CallableStatement cst) {
         try {
-            ResultSet rs = cst.executeQuery();
-            ResultSet results = cst.getResultSet();
-            if (results != null) {
-                int rowcount = 0;
-                if (results.last()) {
-                    rowcount = results.getRow();
-                    results.beforeFirst(); // not rs.first() because the rs.next() later will move on, missing the first
-                                            // element
+            boolean hadResults = cst.execute();
+            if (hadResults) {
+                ResultSet results = cst.getResultSet();
+                if (results != null) {
+                    int rowcount = 0;
+                    if (results.last()) {
+                        rowcount = results.getRow();
+                        results.beforeFirst(); // not rs.first() because the rs.next() later will move on, missing the first
+                                                // element
+                    }
+                    if (VERBOSE)
+                        System.out.println(cst.toString() + "\n Success.  Result set has " + rowcount + " rows");
+                } else {
+                    if (VERBOSE)
+                        System.out.println(cst.toString() + "\n Success.  No results returned");
                 }
-                if (VERBOSE) System.out.println(cst.toString() + "\n Success.  Result set has " + rowcount + " rows");
+                return results;
             } else {
-                if (VERBOSE) System.out.println(cst.toString() + "\n Success.  No results returned");
+                if (VERBOSE)
+                    System.out.println(cst.toString() + "\nUpdate count:"+ cst.getUpdateCount());
+                return null;
             }
-            return results;
             
         } catch (SQLException e) {
             System.out.println(cst.toString() + "\n failed to run.");
@@ -93,18 +101,21 @@ public class DBConnector {
     
 
     public ResultSet callNString(String query, ArrayList<String> params) {
-        Connection conn = getConn();
         try {
-             if (VERBOSE) System.out.println(query + "\n" + toString() + " valid:" + conn.isValid(0));
-            CallableStatement cst = conn.prepareCall(
-                query,
-                ResultSet.TYPE_SCROLL_SENSITIVE, // allows us to move forward and back in the ResultSet
-                ResultSet.CONCUR_UPDATABLE);
-            int paramNum = 1;
-            for (String param: params){
-                cst.setString(paramNum++, param);
+            if (conn.isValid(0)) {
+                if (VERBOSE) System.out.println(query + "\n" + toString());
+                CallableStatement cst = conn.prepareCall(
+                    query,
+                    ResultSet.TYPE_SCROLL_SENSITIVE, // allows us to move forward and back in the ResultSet
+                    ResultSet.CONCUR_UPDATABLE);
+                int paramNum = 1;
+                for (String param: params){
+                    cst.setString(paramNum++, param);
+                }
+                return runCall(cst);
+            } else {
+                return null;
             }
-            return runCall(cst);
         } catch (SQLException e) {
             System.out.println(query + "\n failed to run.");
             System.err.println(e.toString());
@@ -114,18 +125,23 @@ public class DBConnector {
     
     
     public ResultSet callNInt(String query, ArrayList<Integer> params) {
-        Connection conn = getConn();
+        close();
+        connect();
         try {
-             if (VERBOSE) System.out.println(query + "\n" + toString() + " valid:" + conn.isValid(0));
-             CallableStatement cst = conn.prepareCall(
-                query,
-                ResultSet.TYPE_SCROLL_SENSITIVE, // allows us to move forward and back in the ResultSet
-                ResultSet.CONCUR_UPDATABLE);
-            int paramNum = 1;
-            for (int param: params){
-                cst.setInt(paramNum++, param);
+            if (conn.isValid(0)) {
+                if (VERBOSE) System.out.println(query + "\n" + toString());
+                CallableStatement cst = conn.prepareCall(
+                    query,
+                    ResultSet.TYPE_SCROLL_SENSITIVE, // allows us to move forward and back in the ResultSet
+                    ResultSet.CONCUR_UPDATABLE);
+                for (int paramNum = 0; paramNum < params.size(); paramNum++) {
+                    int param = params.get(paramNum);
+                    cst.setInt(paramNum + 1, param);
+                }
+                return runCall(cst);
+            } else {
+                return null;
             }
-            return runCall(cst);
         } catch (SQLException e) {
             System.out.println(query + "\n failed to run.");
             System.err.println(e.toString());
@@ -225,6 +241,7 @@ public class DBConnector {
                     System.out.println();
                 }
             }
+            rs.beforeFirst();  // reset ResultsSet cursor ready for reading again
         } catch (SQLException e) {
             System.err.println(e.toString());
         }

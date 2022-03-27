@@ -1,4 +1,4 @@
-package src.data_access;
+package data_access;
 
 import java.sql.CallableStatement;
 import java.sql.Connection;
@@ -7,8 +7,8 @@ import java.sql.SQLException;
 
 import java.util.ArrayList;
 
-import src.data_access.DBConnector;
-import src.util.Parser;
+import data_access.DBConnector;
+import util.Parser;
 
 /**
  * DataAccess
@@ -98,16 +98,17 @@ public class DataAccess {
         params.add(add_st);
         params.add(post_code);
         ResultSet rs = db.callNString(query, params);
+        int retVal = -1;
         try {
-        if (rs.next())
-            return rs.getInt("customerID");
-        else
-            return -1; // No results suggesting failed to register
+            if (rs.next())
+                retVal = rs.getInt("customerID");
         } catch (SQLException sqle) {
-            System.err.println(sqle.toString());
-            return -1;
+            //System.err.println(sqle.toString());
+            sqle.printStackTrace();
         }
-
+//        db.close();
+//        db.connect();
+        return retVal;
     }
    /**
     * getCustomerData gets all the data stored for a specified Customer
@@ -190,13 +191,17 @@ public class DataAccess {
         ResultSet rs = getAvailableSeats(perfId);
         int newStall = 0;
         int newCircle = 0;
+        boolean bookingMade = false;
         try {
             if (rs.next()) {
                 newStall = rs.getInt("seats_stall") - stall;
                 newCircle = rs.getInt("seats_circle") - circle;
             }
         } catch (SQLException sqle) {
-            System.err.println(sqle.toString());
+            //System.err.println(sqle.toString());
+            if (rs != null) db.printResult(rs);
+            sqle.printStackTrace();
+
         }
 
         if ((newStall >= 0)&&(newCircle >=0))
@@ -207,9 +212,11 @@ public class DataAccess {
             params.add(newStall);
             params.add(newCircle);
             db.callNInt(query, params);
-            return true;
+            bookingMade = true;
         }
-        else return false;
+        db.close();
+        db.connect();
+        return bookingMade;
     }
     
     /** 

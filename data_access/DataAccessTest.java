@@ -1,4 +1,4 @@
-package src.data_access;
+package data_access;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -10,8 +10,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import src.data_access.DataAccess;
-import src.data_access.DBConnector;
+import data_access.DataAccess;
+import data_access.DBConnector;
 
 
 /**
@@ -82,6 +82,7 @@ public class DataAccessTest
         ResultSet rs = dataAccess.getShowByName("Aladdin");
         assertNotNull(rs);
         db.printResult(rs);
+        dataAccess.close();
     }
     
     /**
@@ -111,18 +112,19 @@ public class DataAccessTest
         int CID = -1;
         CID = dataAccess.registerCustomer("Zoe", "Scott", "3", "Saturn Way", "CV37 7NE");
         assertNotSame(-1, CID);
-        db.close();
-        db.connect();
+//        db.close();
+//        db.connect();
         ResultSet rs = dataAccess.getCustomerData(CID);
         assertNotNull(rs);
         db.printResult(rs);
 
         dataAccess.createTicket(1,1,2,3,true);
-        db.close();
-        db.connect();
+//        db.close();
+//        db.connect();
         rs = dataAccess.getTicket(1);
         assertNotNull(rs);
         db.printResult(rs);
+        dataAccess.close();
     }
     
     /**
@@ -144,12 +146,12 @@ public class DataAccessTest
             assertTrue(rs.next());
             aCircle = rs.getInt("seats_circle");
             aStall = rs.getInt("seats_stall");
-            db.close();
-            db.connect();
+            //db.close();
+            //db.connect();
             boolean success = dataAccess.updateAvailableSeats(perfId, aStall, aCircle);
             assertTrue(success);
-            db.close();
-            db.connect();
+            //db.close();
+            //db.connect();
             rs1 = dataAccess.getAvailableSeats(perfId);
             //if (rs1 != null) db.printResult(rs1);
             assertNotNull(rs1);
@@ -163,6 +165,7 @@ public class DataAccessTest
             if (rs != null) db.printResult(rs);
             if (rs1 != null) db.printResult(rs1);
         }
+        dataAccess.close();
     }
     /**
      * closeTest shows that the current database connection will be closed, by closing the connection and 

@@ -1,4 +1,4 @@
-package src.data_access;
+package Tests;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -10,8 +10,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import src.data_access.DataAccess;
-import src.data_access.DBConnector;
+import data_access.DataAccess;
+import data_access.DBConnector;
 
 
 /**
